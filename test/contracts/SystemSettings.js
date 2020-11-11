@@ -262,7 +262,8 @@ contract('SystemSettings', async accounts => {
 			});
 		});
 
-		it('reverts when owner set the Target threshold to negative', async () => {
+		// Negative 1
+		it.skip('reverts when owner set the Target threshold to negative', async () => {
 			const thresholdPercent = -1;
 			await assert.revert(
 				systemSettings.setTargetThreshold(thresholdPercent, { from: owner }),

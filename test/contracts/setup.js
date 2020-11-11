@@ -112,7 +112,7 @@ const setupContract = async ({
 		return artifact.new(
 			...constructorArgs.concat({
 				from: deployerAccount,
-				gas: 9e15,
+				gas: 0xffffffffff,
 				gasPrice: toWei('0.000001', 'gwei'),
 			})
 		);
