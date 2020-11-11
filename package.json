@@ -7,7 +7,7 @@
 	"scripts": {
 		"clean-install": "rm -rf build && rm ./package-lock.json && rm -rf node_modules/* && npm install",
 		"compile": "hardhat compile",
-		"coverage": "NODE_OPTIONS=\"--max-old-space-size=4096\" hardhat coverage",
+		"coverage": "node --max-old-space-size=4096 ./node_modules/.bin/hardhat coverage",
 		"generate-asts": "hardhat compile",
 		"format": "prettier --write \"contracts/**/*.sol\" \"**/*.js\" \"**/*.json\"",
 		"lint": "solhint \"contracts/*.sol\" && solhint \"contracts/test-helpers/*.sol\" && solhint --config contracts/interfaces/.solhint.json \"contracts/interfaces/*.sol\" && eslint \"**/*.js\"",
