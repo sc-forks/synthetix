@@ -115,7 +115,7 @@
 		"solc": "0.5.16",
 		"solhint": "^2.3.0",
 		"solidifier": "github:synthetixio/solidifier#2.2.0",
-		"solidity-coverage": "https://github.com/sc-forks/solidity-coverage.git#dba6e0c84f654d55a7a8fe00288091101a54d770",
+		"solidity-coverage": "https://github.com/sc-forks/solidity-coverage.git#bab2a938f73efb32a87dc8a3bceafbba561706db",
 		"table": "^5.0.2",
 		"wait-port": "^0.2.2",
 		"web3": "^1.2.11",
