@@ -305,6 +305,15 @@ const localNetwork = Object.assign(
 	baseNetworkConfig
 );
 
+const hardhatNetwork = Object.assign(
+	{
+		accounts: {
+			accountsBalance: "10000000000000"
+		}
+	},
+	baseNetworkConfig
+);
+
 module.exports = {
 	GAS_PRICE,
 	solidity: {
@@ -329,7 +338,7 @@ module.exports = {
 		ignores: 'test-helpers',
 	},
 	networks: {
-		hardhat: baseNetworkConfig,
+		hardhat: hardhatNetwork,
 		localhost: localNetwork,
 	},
 	gasReporter: {
