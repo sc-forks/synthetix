@@ -1,0 +1,8 @@
+jobs:
+  - job-prepare
+  - job-test-ovm:
+      requires:
+        - job-prepare
+  - job-coverage-report:
+      requires:
+        - job-prepare

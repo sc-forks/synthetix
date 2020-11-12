@@ -1,18 +1,18 @@
 commands:
-    etherscan_check:
+    cmd-etherscan-check:
         description: Run etherscan ABI check
         parameters:
             network:
                 type: string
         steps:
             - run: npm run test:etherscan --  --network << parameters.network >>
-    fork_deploy:
+    cmd-fork-deploy:
         description: Performs a deployment using a fork
         parameters:
             network:
                 type: string
         steps:
-            - fork_start:
+            - cmd-fork-start:
                 network: << parameters.network >>
                 reset: true
             - run: node publish deploy --use-fork --yes --network << parameters.network >>
@@ -21,7 +21,7 @@ commands:
                     - publish/deployed
                     - .db
                 root: .
-    fork_prepare_deploy:
+    cmd-fork-prepare-deploy:
         description: Prepares contract artifacts and deployed/<network>/config.json for a deployment using a fork based on releases.json
         parameters:
             network:
@@ -34,7 +34,7 @@ commands:
                     - build
                     - publish/deployed
                 root: .
-    fork_start:
+    cmd-fork-start:
         description: Starts a local ganache fork on the specified network
         parameters:
             network:
@@ -46,25 +46,27 @@ commands:
             - run:
                 background: true
                 command: node publish fork --network << parameters.network >> <<# parameters.reset >> --reset <</ parameters.reset >>
-            - wait_for_rpc
-    fork_test_prod:
+            - cmd-wait-for-rpc
+    cmd-fork-test-prod:
         description: Runs prod tests on a fork
         parameters:
             network:
                 type: string
         steps:
-            - fork_start:
+            - cmd-fork-start:
                 network: << parameters.network >>
                 reset: true
             - run: npm run test:prod:gas && npx codechecks codechecks.prod.yml
-    testnet_pvt:
+            - store_artifacts:
+                path: test-gas-used-prod.log
+    cmd-testnet-pvt:
         description: Run testnet PVT
         parameters:
             network:
                 type: string
         steps:
             - run: npm run test:testnet --  --yes --network << parameters.network >>
-    wait_for_rpc:
+    cmd-wait-for-rpc:
         description: Wait until a connection is established with http://localhost:8545
         steps:
             - run: sleep 5
@@ -74,10 +76,19 @@ commands:
                     :
                 shell: /bin/sh
 jobs:
-    coverage-report:
+    job-compile:
         docker:
             - image: circleci/node:12.18
-        resource_class: xlarge
+        steps:
+            - checkout
+            - attach_workspace:
+                at: .
+            - run: npx buidler compile --optimizer --fail-oversize
+            - run: npx buidler compile --use-ovm --optimizer --fail-oversize
+        working_directory: ~/repo
+    job-coverage-report:
+        docker:
+            - image: circleci/node:12.18
         steps:
             - checkout
             - attach_workspace:
@@ -85,7 +96,7 @@ jobs:
             - run: NODE_OPTIONS=--max_old_space_size=4096 npm run coverage
             - run: bash <(curl -s https://codecov.io/bash)
         working_directory: ~/repo
-    fork-deploy:
+    job-fork-deploy:
         docker:
             - image: circleci/node:12.18
         parameters:
@@ -95,10 +106,10 @@ jobs:
             - checkout
             - attach_workspace:
                 at: .
-            - fork_deploy:
+            - cmd-fork-deploy:
                 network: << parameters.network >>
         working_directory: ~/repo
-    fork-prepare-deploy:
+    job-fork-prepare-deploy:
         docker:
             - image: circleci/node:12.18
         parameters:
@@ -108,10 +119,10 @@ jobs:
             - checkout
             - attach_workspace:
                 at: .
-            - fork_prepare_deploy:
+            - cmd-fork-prepare-deploy:
                 network: << parameters.network >>
         working_directory: ~/repo
-    fork-test-prod:
+    job-fork-test-prod:
         docker:
             - image: circleci/node:12.18
         parameters:
@@ -121,10 +132,10 @@ jobs:
             - checkout
             - attach_workspace:
                 at: .
-            - fork_test_prod:
+            - cmd-fork-test-prod:
                 network: << parameters.network >>
         working_directory: ~/repo
-    gas-report:
+    job-gas-report:
         docker:
             - image: circleci/node:12.18
         steps:
@@ -132,8 +143,10 @@ jobs:
             - attach_workspace:
                 at: .
             - run: npm run test:gas && npx codechecks codechecks.unit.yml
+            - store_artifacts:
+                path: test-gas-used.log
         working_directory: ~/repo
-    lint:
+    job-lint:
         docker:
             - image: circleci/node:12.18
         steps:
@@ -142,7 +155,7 @@ jobs:
                 at: .
             - run: npm run lint
         working_directory: ~/repo
-    pack:
+    job-pack:
         docker:
             - image: circleci/node:12.18
         steps:
@@ -153,7 +166,7 @@ jobs:
             - store_artifacts:
                 path: browser.js
         working_directory: ~/repo
-    prepare:
+    job-prepare:
         docker:
             - image: circleci/node:12.18
         steps:
@@ -161,7 +174,7 @@ jobs:
             - restore_cache:
                 keys:
                     - v2-dependencies-{{ checksum "package-lock.json" }}
-            - run: npm ci
+            - run: yarn
             - save_cache:
                 key: v2-dependencies-{{ checksum "package-lock.json" }}
                 paths:
@@ -171,7 +184,7 @@ jobs:
                     - node_modules
                 root: .
         working_directory: ~/repo
-    slither:
+    job-slither:
         docker:
             - image: trailofbits/eth-security-toolbox
         steps:
@@ -184,7 +197,7 @@ jobs:
                     slither .
                     exit 0
                 name: Show Slither output
-    test-contracts:
+    job-test-contracts:
         docker:
             - image: circleci/node:12.18
         resource_class: large
@@ -203,7 +216,7 @@ jobs:
                     exit $EXIT_CODE
                 name: Test and output gas used
         working_directory: ~/repo
-    test-contracts-legacy:
+    job-test-contracts-legacy:
         docker:
             - image: circleci/node:12.18
         resource_class: large
@@ -214,7 +227,7 @@ jobs:
             - run: npm run compile:legacy
             - run: npx buidler test:legacy
         working_directory: ~/repo
-    test-deployments:
+    job-test-deployments:
         docker:
             - image: circleci/node:12.18
         steps:
@@ -223,19 +236,19 @@ jobs:
                 at: .
             - run: npm run test:deployments
         working_directory: ~/repo
-    test-kovan:
+    job-test-kovan:
         docker:
             - image: circleci/node:12.18
         steps:
             - checkout
             - attach_workspace:
                 at: .
-            - testnet_pvt:
+            - cmd-testnet-pvt:
                 network: kovan
-            - etherscan_check:
+            - cmd-etherscan-check:
                 network: kovan
         working_directory: ~/repo
-    test-local:
+    job-test-local:
         docker:
             - image: circleci/node:12.18
         steps:
@@ -244,17 +257,17 @@ jobs:
                 at: .
             - run: npm run test:local
         working_directory: ~/repo
-    test-mainnet:
+    job-test-mainnet:
         docker:
             - image: circleci/node:12.18
         steps:
             - checkout
             - attach_workspace:
                 at: .
-            - etherscan_check:
+            - cmd-etherscan-check:
                 network: mainnet
         working_directory: ~/repo
-    test-multi-same-chain:
+    job-test-multi-same-chain:
         docker:
             - image: circleci/node:12.18
         steps:
@@ -263,7 +276,7 @@ jobs:
                 at: .
             - run: npm run test:multi-same-chain
         working_directory: ~/repo
-    test-ovm:
+    job-test-ovm:
         docker:
             - image: circleci/node:12.18
         steps:
@@ -272,10 +285,10 @@ jobs:
                 at: .
             - run:
                 command: |
-                    npx buidler compile --ovm --optimizer
-                name: Compile in OVM, enforcing size limit
+                    npx buidler compile --use-ovm --optimizer
+                name: Run unit tests on OVM compiled output (TODO enable tests)
         working_directory: ~/repo
-    test-publish:
+    job-test-publish:
         docker:
             - image: circleci/node:12.18
         resource_class: large
@@ -298,145 +311,37 @@ jobs:
                 destination: test-log.html
                 path: test/publish/test-log.html
         working_directory: ~/repo
-    test-rinkeby:
+    job-test-rinkeby:
         docker:
             - image: circleci/node:12.18
         steps:
             - checkout
             - attach_workspace:
                 at: .
-            - testnet_pvt:
+            - cmd-testnet-pvt:
                 network: rinkeby
-            - etherscan_check:
+            - cmd-etherscan-check:
                 network: rinkeby
         working_directory: ~/repo
 version: 2.1
 workflows:
-    dev:
-        jobs:
-            - prepare
-            - lint:
-                requires:
-                    - prepare
-            - test-contracts:
-                requires:
-                    - prepare
-            - test-contracts-legacy:
-                requires:
-                    - prepare
-            - test-ovm:
-                requires:
-                    - prepare
-            - test-multi-same-chain:
-                requires:
-                    - prepare
-            - test-publish:
-                requires:
-                    - prepare
-            - test-deployments:
-                requires:
-                    - prepare
-            - test-local:
-                requires:
-                    - prepare
-            - pack:
-                requires:
-                    - prepare
-            - coverage-report:
-                requires:
-                    - prepare
-            - gas-report:
-                requires:
-                    - prepare
-            - slither:
-                requires:
-                    - prepare
-            - test-kovan:
-                filters:
-                    branches:
-                        only: staging
-                requires:
-                    - prepare
-            - test-rinkeby:
-                filters:
-                    branches:
-                        only: staging
-                requires:
-                    - prepare
-            - test-mainnet:
-                filters:
-                    branches:
-                        only: master
-                requires:
-                    - prepare
-    forkprod-tests:
-        jobs:
-            - prepare:
-                filters:
-                    branches:
-                        only: develop
-            - fork-prepare-deploy:
-                name: fork-prepare-deploy-mainnet
-                network: mainnet
-                requires:
-                    - prepare
-            - fork-deploy:
-                name: fork-deploy-mainnet
-                network: mainnet
-                requires:
-                    - fork-prepare-deploy-mainnet
-            - fork-test-prod:
-                name: fork-test-prod-mainnet
-                network: mainnet
-                requires:
-                    - fork-deploy-mainnet
-            - fork-prepare-deploy:
-                filters:
-                    branches:
-                        only: develop
-                name: fork-prepare-deploy-rinkeby
-                network: rinkeby
-                requires:
-                    - prepare
-            - fork-deploy:
-                filters:
-                    branches:
-                        only: develop
-                name: fork-deploy-rinkeby
-                network: rinkeby
-                requires:
-                    - fork-prepare-deploy-rinkeby
-            - fork-test-prod:
-                filters:
-                    branches:
-                        only: develop
-                name: fork-test-prod-rinkeby
-                network: rinkeby
-                requires:
-                    - fork-deploy-rinkeby
-            - fork-prepare-deploy:
-                filters:
-                    branches:
-                        only: develop
-                name: fork-prepare-deploy-kovan
-                network: rinkeby
-                requires:
-                    - prepare
-            - fork-deploy:
-                filters:
-                    branches:
-                        only: develop
-                name: fork-deploy-kovan
-                network: rinkeby
-                requires:
-                    - fork-prepare-deploy-kovan
-            - fork-test-prod:
-                filters:
-                    branches:
-                        only: develop
-                name: fork-test-prod-kovan
-                network: rinkeby
-                requires:
-                    - fork-deploy-kovan
     version: 2
+    workflow-dev:
+        jobs:
+            - job-prepare
+            - job-test-ovm:
+                requires:
+                    - job-prepare
+            - job-coverage-report:
+                requires:
+                    - job-prepare
+    workflow-prod:
+        jobs:
+            - job-prepare
+            - job-test-ovm:
+                requires:
+                    - job-prepare
+            - job-coverage-report:
+                requires:
+                    - job-prepare
 
