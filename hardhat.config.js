@@ -307,9 +307,9 @@ const localNetwork = Object.assign(
 
 const hardhatNetwork = Object.assign(
 	{
-		accounts: {
-			accountsBalance: "10000000000000"
-		}
+		//accounts: {
+		//	accountsBalance: "10000000000000"
+		//}
 	},
 	baseNetworkConfig
 );
