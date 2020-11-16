@@ -7,7 +7,7 @@
 	"scripts": {
 		"clean-install": "rm -rf build && rm ./package-lock.json && rm -rf node_modules/* && npm install",
 		"compile": "hardhat compile",
-		"coverage": "NODE_OPTIONS=\"--max-old-space-size=4096\" hardhat coverage --network coverage",
+		"coverage": "node --max-old-space-size=4096 ./node_modules/.bin/hardhat coverage",
 		"generate-asts": "hardhat compile",
 		"format": "prettier --write \"contracts/**/*.sol\" \"**/*.js\" \"**/*.json\"",
 		"lint": "solhint \"contracts/*.sol\" && solhint \"contracts/test-helpers/*.sol\" && solhint --config contracts/interfaces/.solhint.json \"contracts/interfaces/*.sol\" && eslint \"**/*.js\"",
@@ -78,8 +78,8 @@
 		"@codechecks/client": "0.1.10",
 		"@eth-optimism/ovm-toolchain": "0.0.1-alpha.11",
 		"@eth-optimism/solc": "0.5.16-alpha.2",
-		"@nomiclabs/hardhat-truffle5": "^2.0.0-rc.0",
-		"@nomiclabs/hardhat-web3": "^2.0.0-rc.0",
+		"@nomiclabs/hardhat-truffle5": "^2.0.0",
+		"@nomiclabs/hardhat-web3": "^2.0.0",
 		"@pinata/sdk": "1.1.11",
 		"@uniswap/token-lists": "^1.0.0-beta.11",
 		"ajv": "^6.12.4",
@@ -103,7 +103,7 @@
 		"ethers": "^5.0.14",
 		"fs-extra": "9.0.1",
 		"ganache-core": "2.11.3",
-		"hardhat": "^2.0.0-rc.0",
+		"hardhat": "^2.0.0",
 		"husky": "^4.3.0",
 		"inquirer": "^7.3.3",
 		"inquirer-list-search-prompt": "^1.0.2",
@@ -115,13 +115,16 @@
 		"solc": "0.5.16",
 		"solhint": "^2.3.0",
 		"solidifier": "github:synthetixio/solidifier#2.2.0",
-		"solidity-coverage": "^0.7.11",
+		"solidity-coverage": "https://github.com/sc-forks/solidity-coverage.git#c88eed29e70745c327827323fb1eefa20debf3ba",
 		"table": "^5.0.2",
 		"wait-port": "^0.2.2",
 		"web3": "^1.2.11",
 		"web3-eth-ens": "^1.2.11",
 		"webpack": "4.44.0",
 		"webpack-cli": "3.3.12"
+	},
+	"resolutions": {
+		"*/**/@nomiclabs/truffle-contract": "4.2.24"
 	},
 	"dependencies": {
 		"@chainlink/contracts-0.0.10": "npm:@chainlink/contracts@0.0.10",
